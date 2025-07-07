@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { NavigationContainer } from '@react-navigation/native';
-import { createStackNavigator } from '@react-navigation/stack';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { View, Text } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import React, { useEffect, useState } from "react"
+import { NavigationContainer } from "@react-navigation/native"
+import { createStackNavigator } from "@react-navigation/stack"
+import { createBottomTabNavigator } from "@react-navigation/bottom-tabs"
+import { View, Text } from "react-native"
+import AsyncStorage from "@react-native-async-storage/async-storage"
+import { initializeDatabase } from './src/database/database';
 
 // Import des écrans
 import LoginScreen from './src/screens/LoginScreen';
@@ -15,95 +16,117 @@ import TreatmentsScreen from './src/screens/TreatmentsScreen';
 import HistoryScreen from './src/screens/HistoryScreen';
 import ProfileScreen from './src/screens/ProfileScreen';
 
-// Import de la base de données
-import { initializeDatabase } from './src/database/database';
+const Stack = createStackNavigator()
+const Tab = createBottomTabNavigator()
 
-const Stack = createStackNavigator();
-const Tab = createBottomTabNavigator();
-
-const TabNavigator = () => {
-  return (
-    <Tab.Navigator
-      screenOptions={{
-        tabBarActiveTintColor: '#2563eb',
-        tabBarInactiveTintColor: '#6b7280',
-        headerShown: false,
+const MainTabs = () => (
+  <Tab.Navigator
+    screenOptions={{
+      tabBarActiveTintColor: "#2563eb",
+      tabBarInactiveTintColor: "#6b7280",
+      headerStyle: {
+        backgroundColor: "#2563eb",
+      },
+      headerTintColor: "#fff",
+      headerTitleStyle: {
+        fontWeight: "bold",
+      },
+    }}
+  >
+    <Tab.Screen
+      name="Dashboard"
+      component={DashboardScreen}
+      options={{
+        title: "Tableau de bord",
+        tabBarIcon: ({ color }) => <Text style={{ color, fontSize: 20 }}>🏠</Text>,
       }}
-    >
-      <Tab.Screen 
-        name="Dashboard" 
-        component={DashboardScreen}
-        options={{ tabBarLabel: 'Accueil' }}
-      />
-      <Tab.Screen 
-        name="Patients" 
-        component={PatientsScreen}
-        options={{ tabBarLabel: 'Patients' }}
-      />
-      <Tab.Screen 
-        name="Appointments" 
-        component={AppointmentsScreen}
-        options={{ tabBarLabel: 'RDV' }}
-      />
-      <Tab.Screen 
-        name="Treatments" 
-        component={TreatmentsScreen}
-        options={{ tabBarLabel: 'Traitements' }}
-      />
-      <Tab.Screen 
-        name="History" 
-        component={HistoryScreen}
-        options={{ tabBarLabel: 'Historique' }}
-      />
-    </Tab.Navigator>
-  );
-};
+    />
+    <Tab.Screen
+      name="Patients"
+      component={PatientsScreen}
+      options={{
+        title: "Patients",
+        tabBarIcon: ({ color }) => <Text style={{ color, fontSize: 20 }}>👥</Text>,
+      }}
+    />
+    <Tab.Screen
+      name="Appointments"
+      component={AppointmentsScreen}
+      options={{
+        title: "Rendez-vous",
+        tabBarIcon: ({ color }) => <Text style={{ color, fontSize: 20 }}>📅</Text>,
+      }}
+    />
+    <Tab.Screen
+      name="Treatments"
+      component={TreatmentsScreen}
+      options={{
+        title: "Traitements",
+        tabBarIcon: ({ color }) => <Text style={{ color, fontSize: 20 }}>💊</Text>,
+      }}
+    />
+    <Tab.Screen
+      name="History"
+      component={HistoryScreen}
+      options={{
+        title: "Historique",
+        tabBarIcon: ({ color }) => <Text style={{ color, fontSize: 20 }}>📋</Text>,
+      }}
+    />
+    <Tab.Screen
+      name="Profile"
+      component={ProfileScreen}
+      options={{
+        title: "Profil",
+        tabBarIcon: ({ color }) => <Text style={{ color, fontSize: 20 }}>👤</Text>,
+      }}
+    />
+  </Tab.Navigator>
+)
 
-const App = () => {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+export default function App() {
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    initializeApp();
-  }, []);
+    initializeApp()
+  }, [])
 
   const initializeApp = async () => {
     try {
-      // Initialiser la base de données
-      await initializeDatabase();
-      
+      // Initialiser la base de données avec les données par défaut
+      await initializeDatabase()
       // Vérifier si l'utilisateur est connecté
-      const userToken = await AsyncStorage.getItem('userToken');
-      setIsLoggedIn(!!userToken);
+      const token = await AsyncStorage.getItem("userToken")
+      setIsLoggedIn(!!token)
     } catch (error) {
-      console.error('Erreur d\'initialisation:', error);
+      console.error("Erreur lors de l'initialisation:", error)
+      setIsLoggedIn(false)
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
   if (isLoading) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
         <Text>Chargement...</Text>
       </View>
-    );
+    )
   }
 
   return (
     <NavigationContainer>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
-        {!isLoggedIn ? (
+        {isLoggedIn ? (
+          <Stack.Screen name="Main" component={MainTabs} />
+        ) : (
           <>
             <Stack.Screen name="Login" component={LoginScreen} />
             <Stack.Screen name="Register" component={RegisterScreen} />
           </>
-        ) : (
-          <Stack.Screen name="Main" component={TabNavigator} />
         )}
       </Stack.Navigator>
     </NavigationContainer>
-  );
-};
-
-export default App;
+  )
+}
